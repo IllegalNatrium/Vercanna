@@ -1,5 +1,3 @@
-.idea/
-target/
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
@@ -8,8 +6,15 @@ release.properties
 dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
+# User
 *.iml
 config/
+target/
+.idea/
+
+
+# SRC
+src/test
 
 
 # https://github.com/takari/maven-wrapper#usage-without-binary-jar
