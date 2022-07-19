@@ -7,9 +7,6 @@ import com.google.gson.Gson;
 import com.zaxxer.hikari.pool.HikariPool;
 import lombok.AccessLevel;
 import lombok.Getter;
-import me.natrium.redis.RedisController;
-import me.natrium.redis.layouts.RedisServerLayout;
-import me.natrium.spotify.SpotifyController;
 import me.natrium.storage.SQLStorage;
 import me.natrium.vercanna.config.LocalConfig;
 import me.natrium.vercanna.config.LocalConfigController;
@@ -22,6 +19,7 @@ import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.requests.GatewayIntent;
+import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import org.slf4j.LoggerFactory;
@@ -29,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import javax.security.auth.login.LoginException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -36,32 +35,26 @@ public class Vercanna {
 
   @Getter(AccessLevel.PUBLIC)
   static JDA jda;
-  @Getter(AccessLevel.PUBLIC)
-  static SpotifyController spotifyController;
-
-  @Getter(AccessLevel.PUBLIC)
-  static RedisController redisController;
-
   static LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
-  static Logger logger = context.getLogger(SpotifyController.class);
   static Logger driver = context.getLogger(HikariPool.class);
   static Logger commands = context.getLogger(CommandController.class);
+
+  static SQLStorage storage;
 
   static List<Permission> staff_permissions = new ArrayList<>();
 
   public static void main(String[] args) throws LoginException, InterruptedException {
     driver.setLevel(Level.INFO);
 
-    SQLStorage storage = new SQLStorage(driver); // Database
-
     LocalConfig config = new LocalConfigController() // Config
         .createConfigurationFolder()
         .createConfigurationFile()
         .getConfiguration();
 
-    redisController = new RedisController(config.getRedisServerLayout());
-
-    spotifyController = new SpotifyController(redisController.getJedis(),logger);
+    storage = new SQLStorage(
+        context.getLogger(SQLStorage.class),
+        config.getSqlStorage()
+    );
 
     for (int i = config.getStaffPermissions().size() - 1; i >= 0; i--) {
       staff_permissions.add(Permission.valueOf(config.getStaffPermissions().get(i)));
@@ -72,13 +65,8 @@ public class Vercanna {
     // Command Controller
     CommandController controller = new CommandController(
         commands,
-        redisController,
-        spotifyController,
         storage.getConnection()
     );
-
-    // Spotify
-    spotifyController.tryToAuthorize();
 
     jda = JDABuilder
         .createDefault(config.getToken())
@@ -102,13 +90,23 @@ public class Vercanna {
                 Activity.playing("COD : Vanguard"),
                 false);
 
-    for (int i = jda.getGuilds().size() - 1; i >= 0; i--) {
-      Guild guild = jda.getGuildById(jda.getGuilds().get(i).getIdLong());
-      guild.loadMembers()
-          .onError(System.out::println)
-          .onSuccess(o -> updateGuildRemote().accept(guild,storage))
-          .get();
-    }
+    Guild guild = jda.getGuildById(910615386385440778L);
+
+    CommandListUpdateAction commandListUpdateAction = guild.updateCommands();
+
+    commandListUpdateAction.addCommands(controller.getCommands());
+
+    commandListUpdateAction.queue();
+
+    Executors.newSingleThreadExecutor()
+        .submit(() -> {
+          for (int i = jda.getGuilds().size() - 1; i >= 0; i--) {
+            guild.loadMembers()
+                .onError(System.out::println)
+                .onSuccess(o -> updateGuildRemote().accept(guild,storage))
+                .get();
+          }
+        });
   }
 
   static BiConsumer<Guild, SQLStorage> updateGuildRemote() {

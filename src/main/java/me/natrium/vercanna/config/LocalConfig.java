@@ -3,7 +3,7 @@ package me.natrium.vercanna.config;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import lombok.Getter;
-import me.natrium.redis.layouts.RedisServerLayout;
+import me.natrium.storage.layouts.SQLStorageLayout;
 
 import java.util.List;
 
@@ -20,8 +20,8 @@ public class LocalConfig {
   private List<String> staffPermissions;
 
   @Expose
-  @SerializedName("REDIS")
+  @SerializedName("MYSQL")
   @Getter
-  private RedisServerLayout redisServerLayout;
+  private SQLStorageLayout sqlStorage;
 
 }

@@ -1,8 +1,11 @@
 {
   "TOKEN": "",
-  "REDIS": {
-    "HOST": "127.0.0.1",
-    "PORT": "6379"
+  "MYSQL": {
+    "HOST": "localhost",
+    "PORT": "3306",
+    "USERNAME": "",
+    "PASSWORD": "",
+    "PARAMS": "?autoReconnect=true&useSSL=false"
   },
   "_STAFF_PERMISSIONS_COMMENT": "MUST MATCH WIKI'S PERMISSIONS NAMES",
   "STAFF_PERMISSIONS": [

@@ -1,9 +1,7 @@
 package me.natrium.vercanna.controllers;
 
 import ch.qos.logback.classic.Logger;
-import me.natrium.redis.RedisController;
-import me.natrium.spotify.SpotifyController;
-import me.natrium.vercanna.commands.spotify.login.LoginCommand;
+import me.natrium.vercanna.commands.citations.CitationsController;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
@@ -17,18 +15,17 @@ public class CommandController extends ListenerAdapter {
   private List<ICommand> commands = new ArrayList<>();
   private final Logger logger;
   private final Connection connection;
-  private final RedisController redis;
-  private final SpotifyController spotify;
 
-  public CommandController(Logger logger, RedisController redis, SpotifyController spotify, Connection connection) {
+  public CommandController(Logger logger, Connection connection) {
     this.logger = logger;
-    this.redis = redis;
-    this.spotify = spotify;
     this.connection = connection;
     this.registerAllCommands(
-        // -- Spotify
-        new LoginCommand("login","Login to spotify!")
+        new CitationsController("citation","Citations!")
     );
+  }
+
+  public List<ICommand> getCommands() {
+    return commands;
   }
 
   @Override
@@ -36,7 +33,7 @@ public class CommandController extends ListenerAdapter {
     String name = event.getName();
     for (int i = this.commands.size() - 1; i >= 0; i--) {
       if(name.equals(this.commands.get(i).getName())) {
-        this.commands.get(i).executeCommand(event,this.redis,this.spotify,this.connection);
+        this.commands.get(i).executeCommand(event,this.connection);
       }
     }
     super.onSlashCommandInteraction(event);

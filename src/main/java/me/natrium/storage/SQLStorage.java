@@ -3,6 +3,7 @@ package me.natrium.storage;
 import ch.qos.logback.classic.Logger;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import me.natrium.storage.layouts.SQLStorageLayout;
 import net.dv8tion.jda.api.entities.Member;
 
 import java.sql.Connection;
@@ -14,9 +15,11 @@ public class SQLStorage implements SQLStorageComponent {
 
   Connection connection;
   Logger logger;
+  SQLStorageLayout config;
 
-  public SQLStorage(Logger logger) {
+  public SQLStorage(Logger logger, SQLStorageLayout config) {
     this.logger = logger;
+    this.config = config;
   }
 
   @Override
@@ -24,9 +27,13 @@ public class SQLStorage implements SQLStorageComponent {
     try {
       HikariConfig config = new HikariConfig();
 
-      config.setJdbcUrl("jdbc:mysql://localhost:3306/Vercanna?autoReconnect=true&useSSL=false");
-      config.setUsername("natrium");
-      config.setPassword("1986");
+      String jdbc = "jdbc:mysql://" +
+          this.config.getHost() + ":" + this.config.getPort() + "/" +
+          this.config.getDatabase() + this.config.getParams();
+
+      config.setJdbcUrl(jdbc);
+      config.setUsername(this.config.getUsername());
+      config.setPassword(this.config.getPassword());
       config.setDriverClassName("com.mysql.cj.jdbc.Driver");
 
       HikariDataSource source = new HikariDataSource(config);
