@@ -139,15 +139,6 @@ public class Vercanna {
       buffer.append(" }\n");
       buffer.append("}");
 
-      long guildId = g.getIdLong();
-      long owner = guildOwner.getUser().getIdLong();
-
-      c.createGuild(
-          guildId,
-          owner,
-          staffers,
-          robots
-      );
       System.out.println(buffer);
     };
   }
